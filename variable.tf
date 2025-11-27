@@ -8,7 +8,7 @@ variable "vpc_cidrblock" {
 variable "environment" {
   description = "Environment name (e.g., dev, staging, prod)"
   type        = string
-  default     = "staging"
+  
   
 }
 
@@ -80,19 +80,19 @@ variable "label_one" {
 variable "zone_name" {
   description = "Name of the DNS zone"
   type        = string
-  default     = "example.com"
+  
 }
 
 variable "domain-name" {
   description = "Domain name to be created"
   type        = string
-  default     = "myapp.example.com"
+
 }
 
 variable "namecheap_api_user" {
   description = "Namecheap API user"
   type        = string
-  default     = "Firstofherkind"
+  
 }
 variable "namecheap_api_key" {
   description = "Namecheap API key"
@@ -102,7 +102,7 @@ variable "namecheap_api_key" {
 variable "namecheap_username" {
   description = "Namecheap username"
   type        = string
-  default     = "Firstofherkind"
+  
 }
 variable "namecheap_client_ip" {
   description = "Client IP for Namecheap API access"
