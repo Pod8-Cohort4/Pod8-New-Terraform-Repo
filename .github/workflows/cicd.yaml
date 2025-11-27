@@ -9,7 +9,7 @@ permissions:
     id-token: write
 jobs:
   deploy-iac:
-    runs-on: [docker-runner]
+    runs-on: self-hosted
 
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
