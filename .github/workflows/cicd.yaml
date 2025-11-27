@@ -59,8 +59,8 @@ jobs:
       - name: 'tfsec Security Scan.'
         run: ./tfsec . || true
 
-      - name: Terraform Plan
-        run: terraform plan 
+      # - name: Terraform Plan
+      #   run: terraform plan 
 
       - name: Terraform Apply.
         run: terraform apply -auto-approve 
@@ -80,5 +80,5 @@ jobs:
       # - name: 'Deploying argocd ingress rule to EKS'
       #   run: kubectl apply -f ingress-argocd.yaml -n argocd
 
-      # - name: Terraform Destroy
-      #   run: terraform destroy -auto-approve
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
