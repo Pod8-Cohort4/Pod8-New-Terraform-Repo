@@ -1,0 +1,25 @@
+# Environment files
+.env
+
+# Terraform directories and files
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+
+# Crash logs
+crash.log
+
+# Terraform provider binaries (especially for Windows)
+*.exe
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# IDE/editor files
+.vscode/
+.idea/
+*.iml
+*.log

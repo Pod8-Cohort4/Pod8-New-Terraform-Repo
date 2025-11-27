@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  github-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: docker-runner:latest
+    container_name: github-runner
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-data:/home/runner       # Runner home
+      - /home/ubuntu/runner-kube:/home/runner/.kube  # Persist kubeconfig
+
+volumes:
+  runner-data:
+
