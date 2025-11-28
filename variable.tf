@@ -8,7 +8,7 @@ variable "vpc_cidrblock" {
 variable "environment" {
   description = "Environment name (e.g., dev, staging, prod)"
   type        = string
-  
+  default    = "production"
   
 }
 
@@ -107,7 +107,7 @@ variable "namecheap_username" {
 variable "namecheap_client_ip" {
   description = "Client IP for Namecheap API access"
   type        = string
-  default     = "23.20.116.248" # Replace with your actual client IP
+  default     = "52.55.252.6" # Replace with your actual client IP
 }
 
 #===========
