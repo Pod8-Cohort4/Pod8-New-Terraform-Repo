@@ -63,8 +63,8 @@ jobs:
         run: terraform plan
 
       # Optional steps
-      # - name: Terraform Apply
-      #   run: terraform apply -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
 #
 #       # - name: Install kubectl
 #       #   run: |

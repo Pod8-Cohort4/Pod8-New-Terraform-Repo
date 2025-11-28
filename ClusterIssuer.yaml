@@ -7,7 +7,7 @@ metadata:
 spec:
   acme:
     server: https://acme-v02.api.letsencrypt.org/directory
-    email: inijoy1@gmail.com
+    email: pod8cohort4@gmail.com
     privateKeySecretRef:
       name: letsencrypt-prod-cluster-issuer
     solvers:
