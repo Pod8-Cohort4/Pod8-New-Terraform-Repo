@@ -34,7 +34,7 @@ resource "helm_release" "nginx_ingress" {
     create_namespace = true
 
     values = [file("${path.module}/nginx-ingress-values.yaml")]
-    depends_on = [ aws_eks_node_group.eks_node_group, null_resource.wait_for_eks]
+    depends_on = [ aws_eks_node_group.eks_node_group]
 }
 
 data "aws_lb" "nginx_ingress" {
@@ -60,7 +60,7 @@ resource "helm_release" "cert_manager" {
     }
   ]
 
-  depends_on = [ helm_release.nginx_ingress, null_resource.wait_for_eks ]
+  depends_on = [ helm_release.nginx_ingress]
 }
 
 #==================================================
@@ -73,7 +73,7 @@ resource "helm_release" "argocd" {
     namespace        = "argocd"
     create_namespace = true
     values = [file("${path.module}/argocd-values.yaml")]
-    depends_on = [ helm_release.nginx_ingress, helm_release.cert_manager, null_resource.wait_for_eks]
+    depends_on = [ helm_release.nginx_ingress, helm_release.cert_manager]
 }
 resource "null_resource" "wait_for_eks" {
   depends_on = [
