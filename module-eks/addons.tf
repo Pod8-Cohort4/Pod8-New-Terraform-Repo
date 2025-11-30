@@ -26,7 +26,7 @@ data "aws_eks_cluster_auth" "eks" {
     name = aws_eks_cluster.eks.name
 }
 resource "helm_release" "nginx_ingress" {
-  name             = "nginx-ingress"
+  name             = "nginx-ingress-new"
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
   version          = "4.14.0"
