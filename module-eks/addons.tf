@@ -62,7 +62,6 @@ data "aws_lb" "nginx_ingress" {
 
 # Cert-Manager
 resource "helm_release" "cert_manager" {
-  provider         = helm  # Helm provider references kubernetes.post_eks
   name             = "cert-manager-${var.environment}"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
@@ -71,7 +70,7 @@ resource "helm_release" "cert_manager" {
   create_namespace = true
 
   values = [
-    file("cert-manager-values.yaml")
+    file("${path.module}/cert-manager-values.yaml")
   ]
 
   depends_on = [
