@@ -1,26 +1,40 @@
 # --------------------------------------------------------
-# Providers
+# Helm Provider
 # --------------------------------------------------------
 provider "helm" {
   kubernetes = {
     host                   = aws_eks_cluster.eks.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster_auth.cluster.certificate_authority[0].data)
+    cluster_ca_certificate = base64decode(aws_eks_cluster.eks.certificate_authority[0].data)
     token                  = data.aws_eks_cluster_auth.cluster.token
   }
 }
 
+# --------------------------------------------------------
+# Kubernetes Provider (for resources & data)
+# --------------------------------------------------------
 provider "kubernetes" {
   alias                  = "eks"
   host                   = aws_eks_cluster.eks.endpoint
-  cluster_ca_certificate = base64decode(data.aws_eks_cluster_auth.cluster.certificate_authority[0].data)
+  cluster_ca_certificate = base64decode(aws_eks_cluster.eks.certificate_authority[0].data)
   token                  = data.aws_eks_cluster_auth.cluster.token
 }
 
 # --------------------------------------------------------
-# EKS Cluster Auth
+# EKS Auth Data
 # --------------------------------------------------------
 data "aws_eks_cluster_auth" "cluster" {
   name = aws_eks_cluster.eks.name
+}
+
+# --------------------------------------------------------
+# Wait for EKS Node Group (optional)
+# --------------------------------------------------------
+resource "null_resource" "wait_for_nodes" {
+  depends_on = [aws_eks_node_group.eks_node_group]
+
+  provisioner "local-exec" {
+    command = "echo 'Waiting for EKS nodes to be ready...' && sleep 120"
+  }
 }
 
 # --------------------------------------------------------
@@ -41,7 +55,7 @@ resource "helm_release" "nginx_ingress" {
   ]
 
   depends_on = [
-    aws_eks_node_group.eks_node_group
+    null_resource.wait_for_nodes
   ]
 }
 
@@ -56,7 +70,6 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
   wait             = true
-  timeout          = 600
 
   set = [
     {
@@ -78,15 +91,23 @@ resource "helm_release" "argocd" {
   version          = "5.51.6"
   namespace        = "argocd"
   create_namespace = true
+  values           = [file("${path.module}/argocd-values.yaml")]
   wait             = true
-  timeout          = 600
-
-  values = [
-    file("${path.module}/argocd-values.yaml")
-  ]
 
   depends_on = [
     helm_release.nginx_ingress,
     helm_release.cert_manager
   ]
+}
+
+# --------------------------------------------------------
+# Kubernetes Service Data Source for NGINX
+# --------------------------------------------------------
+data "kubernetes_service" "nginx_ingress" {
+  metadata {
+    name      = "ingress-nginx-controller"
+    namespace = "ingress-nginx"
+  }
+
+  depends_on = [helm_release.nginx_ingress]
 }
