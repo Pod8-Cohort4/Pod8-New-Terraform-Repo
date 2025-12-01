@@ -27,13 +27,13 @@ data "aws_eks_cluster_auth" "cluster" {
 }
 
 # --------------------------------------------------------
-# Wait for EKS Node Group (optional)
+# Wait for EKS Node Group
 # --------------------------------------------------------
 resource "null_resource" "wait_for_nodes" {
   depends_on = [aws_eks_node_group.eks_node_group]
 
   provisioner "local-exec" {
-    command = "echo 'Waiting for EKS nodes to be ready...' && sleep 120"
+    command = "echo 'Waiting for EKS nodes...' && sleep 60"
   }
 }
 
@@ -41,26 +41,37 @@ resource "null_resource" "wait_for_nodes" {
 # NGINX Ingress Helm Release
 # --------------------------------------------------------
 resource "helm_release" "nginx_ingress" {
-    name       = "nginx-ingress"
-    repository = "https://kubernetes.github.io/ingress-nginx"
-    chart      = "ingress-nginx"
-    version    = "4.12.0"
-    namespace  = "ingress-nginx"
-    create_namespace = true
+  name             = "nginx-ingress"
+  repository       = "https://kubernetes.github.io/ingress-nginx"
+  chart            = "ingress-nginx"
+  version          = "4.12.0"
+  namespace        = "ingress-nginx"
+  create_namespace = true
 
-    values = [file("${path.module}/nginx-ingress-values.yaml")]
-    depends_on = [ null_resource.wait_for_nodes ]
+  values   = [file("${path.module}/nginx-ingress-values.yaml")]
+  wait     = true
+  timeout  = 600
+
+  depends_on = [null_resource.wait_for_nodes]
 }
 
-data "aws_lb" "nginx_ingress" {
-  tags = {
-    "kubernetes.io/service-name" = "ingress-nginx/nginx-ingress-ingress-nginx-controller"
-  }
-
+# --------------------------------------------------------
+# Wait for NGINX Load Balancer to be ready
+# --------------------------------------------------------
+resource "null_resource" "wait_for_nginx_lb" {
   depends_on = [helm_release.nginx_ingress]
+
+  provisioner "local-exec" {
+    command = <<EOT
+echo "Waiting for NGINX Load Balancer..."
+sleep 180
+EOT
+  }
 }
 
-# Cert-Manager
+# --------------------------------------------------------
+# Cert-Manager Helm Release
+# --------------------------------------------------------
 resource "helm_release" "cert_manager" {
   name             = "cert-manager-${var.environment}"
   repository       = "https://charts.jetstack.io"
@@ -69,26 +80,27 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
 
-  values = [
-    file("${path.module}/cert-manager-values.yaml")
-  ]
+  values   = [file("${path.module}/cert-manager-values.yaml")]
+  wait     = true
+  timeout  = 900  # 15 minutes to allow CRDs and webhooks to become ready
 
-  depends_on = [
-    helm_release.nginx_ingress
-  ]
+  depends_on = [null_resource.wait_for_nginx_lb]
 }
 
-#==================================================
-
+# --------------------------------------------------------
+# Wait for Cert-Manager CRDs to register
+# --------------------------------------------------------
 resource "null_resource" "wait_for_crds" {
   depends_on = [helm_release.cert_manager]
 
   provisioner "local-exec" {
-    command = "sleep 40"
+    command = "echo 'Waiting for Cert-Manager CRDs to register...' && sleep 60"
   }
 }
 
-
+# --------------------------------------------------------
+# ArgoCD Helm Release
+# --------------------------------------------------------
 resource "helm_release" "argocd" {
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
@@ -97,10 +109,9 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
 
-  values = [file("${path.module}/argocd-values.yaml")]
+  values   = [file("${path.module}/argocd-values.yaml")]
+  wait     = true
+  timeout  = 600
 
-  depends_on = [
-    helm_release.nginx_ingress,
-    null_resource.wait_for_crds
-  ]
+  depends_on = [null_resource.wait_for_crds]
 }
