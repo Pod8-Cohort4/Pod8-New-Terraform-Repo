@@ -60,21 +60,6 @@ resource "helm_release" "nginx_ingress" {
 }
 
 # --------------------------------------------------------
-# Wait for NGINX LB to be ready
-# --------------------------------------------------------
-resource "null_resource" "wait_for_nginx_lb" {
-  depends_on = [helm_release.nginx_ingress]
-
-  provisioner "local-exec" {
-    command = <<EOT
-kubectl wait --namespace ingress-nginx \
-  --for=condition=available svc/ingress-nginx-controller \
-  --timeout=600s
-EOT
-  }
-}
-
-# --------------------------------------------------------
 # Cert-Manager Helm Release
 # --------------------------------------------------------
 resource "helm_release" "cert_manager" {
@@ -126,13 +111,20 @@ data "kubernetes_service" "nginx_ingress" {
     namespace = "ingress-nginx"
   }
 
-  depends_on = [null_resource.wait_for_nginx_lb]
+  depends_on = [helm_release.nginx_ingress]
 }
 
 # --------------------------------------------------------
 # Local aliases to maintain previous outputs for Route53
 # --------------------------------------------------------
 locals {
-  nginx_ingress_dns = try(data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname, "")
-  nginx_ingress_ip  = try(data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip, "")
+  nginx_ingress_dns = try(
+    data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname,
+    ""  # fallback to empty string if not ready
+  )
+
+  nginx_ingress_ip = try(
+    data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip,
+    ""  # fallback to empty string if not ready
+  )
 }
