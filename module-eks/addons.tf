@@ -63,12 +63,30 @@ resource "helm_release" "nginx_ingress" {
 # --------------------------------------------------------
 # Optional: Fetch the NLB after NGINX is installed
 # --------------------------------------------------------
+# --------------------------------------------------------
+# Wait for Nginx Ingress LoadBalancer to be ready
+# --------------------------------------------------------
+resource "null_resource" "wait_for_nginx_lb" {
+  provisioner "local-exec" {
+    command = <<EOT
+      kubectl wait --namespace ingress-nginx \
+        --for=condition=available svc/ingress-nginx-controller \
+        --timeout=600s
+    EOT
+  }
+
+  depends_on = [helm_release.nginx_ingress]
+}
+
+# --------------------------------------------------------
+# AWS LoadBalancer Data Source (depends on wait)
+# --------------------------------------------------------
 data "aws_lb" "nginx_ingress" {
   tags = {
     "kubernetes.io/service-name" = "ingress-nginx/ingress-nginx-controller"
   }
 
-  depends_on = [helm_release.nginx_ingress]
+  depends_on = [null_resource.wait_for_nginx_lb]
 }
 
 # --------------------------------------------------------
@@ -81,6 +99,7 @@ resource "helm_release" "cert_manager" {
   version          = "1.14.5"
   namespace        = "cert-manager"
   create_namespace = true
+  wait             = true  # Ensures Terraform waits for all pods
 
   set = [
     {
@@ -103,6 +122,7 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
   values           = [file("${path.module}/argocd-values.yaml")]
+  wait             = true
 
   depends_on = [
     helm_release.nginx_ingress,
