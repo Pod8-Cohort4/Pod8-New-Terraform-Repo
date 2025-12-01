@@ -41,49 +41,55 @@ resource "null_resource" "wait_for_nodes" {
 # NGINX Ingress Helm Release
 # --------------------------------------------------------
 resource "helm_release" "nginx_ingress" {
-  name             = "nginx-ingress"
-  repository       = "https://kubernetes.github.io/ingress-nginx"
-  chart            = "ingress-nginx"
-  version          = "4.14.0"
-  namespace        = "ingress-nginx"
-  create_namespace = true
-  wait             = true
-  timeout          = 600
+    name       = "nginx-ingress"
+    repository = "https://kubernetes.github.io/ingress-nginx"
+    chart      = "ingress-nginx"
+    version    = "4.12.0"
+    namespace  = "ingress-nginx"
+    create_namespace = true
 
-  values = [
-    file("${path.module}/nginx-ingress-values.yaml")
-  ]
-
-  depends_on = [
-    null_resource.wait_for_nodes
-  ]
+    values = [file("${path.module}/nginx-ingress-values.yaml")]
+    depends_on = [ null_resource.wait_for_nodes ]
 }
 
-# --------------------------------------------------------
-# Cert-Manager Helm Release
-# --------------------------------------------------------
+data "aws_lb" "nginx_ingress" {
+  tags = {
+    "kubernetes.io/service-name" = "ingress-nginx/nginx-ingress-ingress-nginx-controller"
+  }
+
+  depends_on = [helm_release.nginx_ingress]
+}
+
+# Cert-Manager
 resource "helm_release" "cert_manager" {
-  name             = "cert-manager"
+  provider         = helm  # Helm provider references kubernetes.post_eks
+  name             = "cert-manager-${var.environment}"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
   version          = "1.14.5"
   namespace        = "cert-manager"
   create_namespace = true
-  wait             = true
 
-  set = [
-    {
-      name  = "installCRDs"
-      value = "true"
-    }
+  values = [
+    file("cert-manager-values.yaml")
   ]
 
-  depends_on = [helm_release.nginx_ingress]
+  depends_on = [
+    helm_release.nginx_ingress
+  ]
 }
 
-# --------------------------------------------------------
-# ArgoCD Helm Release
-# --------------------------------------------------------
+#==================================================
+
+resource "null_resource" "wait_for_crds" {
+  depends_on = [helm_release.cert_manager]
+
+  provisioner "local-exec" {
+    command = "sleep 40"
+  }
+}
+
+
 resource "helm_release" "argocd" {
   name             = "argocd"
   repository       = "https://argoproj.github.io/argo-helm"
@@ -91,40 +97,11 @@ resource "helm_release" "argocd" {
   version          = "5.51.6"
   namespace        = "argocd"
   create_namespace = true
-  values           = [file("${path.module}/argocd-values.yaml")]
-  wait             = true
+
+  values = [file("${path.module}/argocd-values.yaml")]
 
   depends_on = [
     helm_release.nginx_ingress,
-    helm_release.cert_manager
+    null_resource.wait_for_crds
   ]
-}
-
-# --------------------------------------------------------
-# Kubernetes Service Data Source for NGINX
-# --------------------------------------------------------
-data "kubernetes_service" "nginx_ingress" {
-  provider = kubernetes.eks
-
-  metadata {
-    name      = "ingress-nginx-controller"
-    namespace = "ingress-nginx"
-  }
-
-  depends_on = [helm_release.nginx_ingress]
-}
-
-# --------------------------------------------------------
-# Local aliases to maintain previous outputs for Route53
-# --------------------------------------------------------
-locals {
-  nginx_ingress_dns = try(
-    data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname,
-    ""  # fallback to empty string if not ready
-  )
-
-  nginx_ingress_ip = try(
-    data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip,
-    ""  # fallback to empty string if not ready
-  )
 }
