@@ -151,7 +151,7 @@ variable "db_name" {
 variable "cluster_name" {
   description = "The name of the EKS cluster"
   type        = string
-  default     = "production-eks-cluster"
+  default     = "eks-cluster"
 }
 
 variable "repository_name" {
