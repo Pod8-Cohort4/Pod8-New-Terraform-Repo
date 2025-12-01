@@ -111,3 +111,11 @@ data "kubernetes_service" "nginx_ingress" {
 
   depends_on = [helm_release.nginx_ingress]
 }
+
+# --------------------------------------------------------
+# Local aliases to maintain previous outputs for Route53
+# --------------------------------------------------------
+locals {
+  nginx_ingress_dns = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname
+  nginx_ingress_ip  = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+}

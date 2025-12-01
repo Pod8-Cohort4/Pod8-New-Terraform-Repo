@@ -10,16 +10,16 @@
 # }
 
 
-
-
 output "nginx_ingress_lb_dns" {
-  value = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname
+  value = local.nginx_ingress_dns
 }
 
-output "nginx_ingress_lb_ip" {
-  value = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].ip
+output "nginx_lb_ip" {
+  value = local.nginx_ingress_ip
 }
 
 output "nginx_ingress_load_balancer_hostname" {
-  value = data.kubernetes_service.nginx_ingress.status[0].load_balancer[0].ingress[0].hostname
+  value = local.nginx_ingress_dns
 }
+
+
