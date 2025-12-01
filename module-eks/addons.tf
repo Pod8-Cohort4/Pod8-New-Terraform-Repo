@@ -104,6 +104,8 @@ resource "helm_release" "argocd" {
 # Kubernetes Service Data Source for NGINX
 # --------------------------------------------------------
 data "kubernetes_service" "nginx_ingress" {
+  provider = kubernetes.eks  # <-- use the provider alias
+
   metadata {
     name      = "ingress-nginx-controller"
     namespace = "ingress-nginx"
@@ -111,6 +113,7 @@ data "kubernetes_service" "nginx_ingress" {
 
   depends_on = [helm_release.nginx_ingress]
 }
+
 
 # --------------------------------------------------------
 # Local aliases to maintain previous outputs for Route53
