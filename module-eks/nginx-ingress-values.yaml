@@ -1,96 +1,10 @@
-# controller:
-#   ingressClassResource:
-#     name: external-nginx
-#   service:
-#     enabled: false
-#     type: ClusterIP   # <-- changed from LoadBalancer to ClusterIP
-#     annotations: {}
-# controller:
-#   ingressClassResource:
-#     name: external-nginx
-#   service:
-#     enabled: true        # ✅ must be true
-#     type: NodePort       # or LoadBalancer if AWS permits
-#     nodePorts:
-#       http: 30080
-#       https: 30443
-#     annotations: {}
-  
-
-#  controller:
-#    service:
-#      type: LoadBalancer
-
-#  controller:
-#   service:
-#     type: LoadBalancer
-#     annotations:
-#       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-#       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"    
-
 controller:
   ingressClassResource:
     name: external-nginx
-    enabled: true
   service:
     type: LoadBalancer
+    enabled: true
     annotations:
       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"  
-# --- 
-# controller:
-#   ingressClassResource:
-#     name: external-nginx
-#   service:
-#     enabled: true
-#     annotations:
-#       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-#       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
-#       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-      
-# controller:
-#   ingressClassResource:
-#     name: external-nginx
-
-#   service:
-#     enabled: true
-#     annotations:
-#       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-#       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
-#       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-#       service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-006734f0be01ae239,subnet-0d1ebd0f922523a4c"
-
-#  controller:
-#   ingressClassResource:
-#     name: external-nginx
-#   service:
-#     enabled: true
-#     annotations:
-#       service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
-#       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
-#       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-#       service.beta.kubernetes.io/aws-load-balancer-subnets: "subnet-006734f0be01ae239,subnet-0d1ebd0f922523a4c"
-#     # explicitly pick public subnets
-#     loadBalancerSourceRanges:
-#       - 0.0.0.0/0
-#     extraLabels: {}
-#     externalTrafficPolicy: Cluster
-#     loadBalancerIP: ""
-#     targetPorts: {}
-#     ports:
-#       http: 80
-#       https: 443
-#   extraArgs: {}
-#   extraEnvs: []
-#   extraVolumes: []
-#   extraVolumeMounts: []
-#   podAnnotations: {}
-#   podSecurityContext: {}
-#   securityContext: {}
-#   nodeSelector: {}
-#   tolerations: []
-#   affinity: {}
-#   metrics:
-#     enabled: false
-
-      
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
