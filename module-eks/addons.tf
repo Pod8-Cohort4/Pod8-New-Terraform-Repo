@@ -45,7 +45,7 @@ resource "helm_release" "nginx_ingress" {
   repository       = "https://kubernetes.github.io/ingress-nginx"
   chart            = "ingress-nginx"
   version          = "4.12.0"
-  namespace        = "ingress-nginx"
+  namespace        = "nginx-ingress"
   create_namespace = true
 
   values   = [file("${path.module}/nginx-ingress-values.yaml")]
@@ -69,32 +69,61 @@ EOT
   }
 }
 
+data "aws_lb" "nginx_ingress" {
+  depends_on = [null_resource.wait_for_nginx_lb]
+
+  tags = {
+    "kubernetes.io/service-name" = "nginx-ingress/nginx-ingress-controller"
+  }
+}
+
 # --------------------------------------------------------
-# Cert-Manager Helm Release
+# Cert-Manager CRDs (REQUIRED FOR RUNNERS)
+# --------------------------------------------------------
+resource "helm_release" "cert_manager_crds" {
+  name       = "cert-manager-crds"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager-crds"
+  version    = "1.14.5"
+
+  namespace        = "cert-manager"
+  create_namespace = true
+
+  depends_on = [null_resource.wait_for_nginx_lb]
+}
+
+# --------------------------------------------------------
+# Cert-Manager (CRDs already installed)
 # --------------------------------------------------------
 resource "helm_release" "cert_manager" {
   name             = "cert-manager-${var.environment}"
   repository       = "https://charts.jetstack.io"
   chart            = "cert-manager"
   version          = "1.14.5"
+
   namespace        = "cert-manager"
   create_namespace = true
 
-  values   = [file("${path.module}/cert-manager-values.yaml")]
-  wait     = true
-  timeout  = 900  # 15 minutes to allow CRDs and webhooks to become ready
+  values = [
+    file("${path.module}/cert-manager-values.yaml")
+  ]
 
-  depends_on = [null_resource.wait_for_nginx_lb]
+  wait     = true
+  timeout  = 900
+
+  depends_on = [
+    helm_release.cert_manager_crds
+  ]
 }
 
 # --------------------------------------------------------
-# Wait for Cert-Manager CRDs to register
+# Wait for Cert-Manager CRDs + Webhooks to settle
 # --------------------------------------------------------
 resource "null_resource" "wait_for_crds" {
   depends_on = [helm_release.cert_manager]
 
   provisioner "local-exec" {
-    command = "echo 'Waiting for Cert-Manager CRDs to register...' && sleep 60"
+    command = "echo 'Waiting for Cert-Manager CRDs and webhooks...' && sleep 60"
   }
 }
 
@@ -109,9 +138,14 @@ resource "helm_release" "argocd" {
   namespace        = "argocd"
   create_namespace = true
 
-  values   = [file("${path.module}/argocd-values.yaml")]
+  values = [
+    file("${path.module}/argocd-values.yaml")
+  ]
+
   wait     = true
   timeout  = 600
 
-  depends_on = [null_resource.wait_for_crds]
+  depends_on = [
+    null_resource.wait_for_crds
+  ]
 }
