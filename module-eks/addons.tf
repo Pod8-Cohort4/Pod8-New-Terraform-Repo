@@ -78,9 +78,10 @@ data "kubernetes_service" "nginx_ingress" {
     namespace = "nginx-ingress"
   }
 
+  provider = kubernetes.eks 
   depends_on = [helm_release.nginx_ingress]
 }
-# --------------------------------------------------------
+
 # Cert-Manager Helm Release
 # --------------------------------------------------------
 resource "helm_release" "cert_manager" {
