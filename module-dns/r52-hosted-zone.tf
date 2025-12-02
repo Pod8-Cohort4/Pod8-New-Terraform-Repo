@@ -13,7 +13,7 @@ resource "aws_route53_record" "name" {
   name    = "bank.${var.domain-name}" 
   type    = "CNAME"
   ttl     = 300
-  records = [var.nginx_ingress_lb_dns]  # Use the hostname, not IP
+  records = [var.nginx_ingress_lb_dns]  # Use the hostname,
 }
 
 resource "aws_route53_record" "name1" {
