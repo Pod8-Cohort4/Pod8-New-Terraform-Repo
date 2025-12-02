@@ -23,7 +23,8 @@ module "eks-deployment" {
     desired_size = var.desired_size
     max_size = var.max_size
     min_size = var.min_size
-    instance_types = var.instance_types
+    # instance_types = var.instance_types
+    instance_types = ["t3.large"]
     capacity_type = var.capacity_type
     public_subnet_ids  = module.vpc-deployment.public_subnet_ids
     private_subnet_ids = module.vpc-deployment.private_subnet_ids
