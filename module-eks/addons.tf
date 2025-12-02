@@ -78,22 +78,7 @@ data "aws_lb" "nginx_ingress" {
 }
 
 # --------------------------------------------------------
-# Cert-Manager CRDs (REQUIRED FOR RUNNERS)
-# --------------------------------------------------------
-resource "helm_release" "cert_manager_crds" {
-  name       = "cert-manager-crds"
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager-crds"
-  version    = "1.14.5"
-
-  namespace        = "cert-manager"
-  create_namespace = true
-
-  depends_on = [null_resource.wait_for_nginx_lb]
-}
-
-# --------------------------------------------------------
-# Cert-Manager (CRDs already installed)
+# Cert-Manager
 # --------------------------------------------------------
 resource "helm_release" "cert_manager" {
   name             = "cert-manager-${var.environment}"
@@ -112,7 +97,7 @@ resource "helm_release" "cert_manager" {
   timeout  = 900
 
   depends_on = [
-    helm_release.cert_manager_crds
+    null_resource.wait_for_nginx_lb
   ]
 }
 
