@@ -56,7 +56,7 @@ resource "helm_release" "nginx_ingress" {
 }
 
 # --------------------------------------------------------
-# Wait for NGINX Load Balancer to be ready
+# Optional wait for NGINX Load Balancer (ELB)
 # --------------------------------------------------------
 resource "null_resource" "wait_for_nginx_lb" {
   depends_on = [helm_release.nginx_ingress]
@@ -64,7 +64,7 @@ resource "null_resource" "wait_for_nginx_lb" {
   provisioner "local-exec" {
     command = <<EOT
 echo "Waiting for NGINX Load Balancer..."
-sleep 180
+sleep 120
 EOT
   }
 }
@@ -73,12 +73,12 @@ data "aws_lb" "nginx_ingress" {
   depends_on = [null_resource.wait_for_nginx_lb]
 
   tags = {
-    "kubernetes.io/service-name" = "nginx-ingress/nginx-ingress-controller"
+    "kubernetes.io/service-name" = "nginx-ingress/nginx-ingress-ingress-nginx-controller"
   }
 }
 
 # --------------------------------------------------------
-# Cert-Manager
+# Cert-Manager Helm Release
 # --------------------------------------------------------
 resource "helm_release" "cert_manager" {
   name             = "cert-manager-${var.environment}"
@@ -96,9 +96,7 @@ resource "helm_release" "cert_manager" {
   wait     = true
   timeout  = 900
 
-  depends_on = [
-    null_resource.wait_for_nginx_lb
-  ]
+  depends_on = [null_resource.wait_for_nodes]
 }
 
 # --------------------------------------------------------
@@ -108,7 +106,7 @@ resource "null_resource" "wait_for_crds" {
   depends_on = [helm_release.cert_manager]
 
   provisioner "local-exec" {
-    command = "echo 'Waiting for Cert-Manager CRDs and webhooks...' && sleep 60"
+    command = "echo 'Waiting for Cert-Manager CRDs and webhooks...' && sleep 30"
   }
 }
 
@@ -130,7 +128,5 @@ resource "helm_release" "argocd" {
   wait     = true
   timeout  = 600
 
-  depends_on = [
-    null_resource.wait_for_crds
-  ]
+  depends_on = [null_resource.wait_for_crds]
 }
