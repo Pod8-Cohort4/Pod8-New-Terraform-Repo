@@ -69,14 +69,17 @@ EOT
   }
 }
 
-data "aws_lb" "nginx_ingress" {
-  depends_on = [null_resource.wait_for_nginx_lb]
 
-  tags = {
-    "kubernetes.io/service-name" = "nginx-ingress/nginx-ingress-ingress-nginx-controller"
+# Get the NGINX ingress service from Kubernetes
+# --------------------------------------------------------
+data "kubernetes_service" "nginx_ingress" {
+  metadata {
+    name      = "nginx-ingress-ingress-nginx-controller"
+    namespace = "nginx-ingress"
   }
-}
 
+  depends_on = [helm_release.nginx_ingress]
+}
 # --------------------------------------------------------
 # Cert-Manager Helm Release
 # --------------------------------------------------------
