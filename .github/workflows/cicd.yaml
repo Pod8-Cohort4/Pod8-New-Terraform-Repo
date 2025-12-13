@@ -63,8 +63,8 @@ jobs:
         run: terraform plan
 
       # # Optional steps
-      # - name: Terraform Apply
-      #   run: terraform apply -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
 
       # - name: Install kubectl
       #   run: |
@@ -81,5 +81,5 @@ jobs:
       # - name: Deploy ArgoCD ingress to EKS
       #   run: kubectl apply -f ingress-argocd.yaml -n argocd
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+      # - name: Terraform Destroy
+      #   run: terraform destroy -auto-approve
